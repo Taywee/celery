@@ -2,6 +2,7 @@
 """The periodic task scheduler."""
 from __future__ import absolute_import, unicode_literals
 
+import pytz
 import errno
 import heapq
 import os
@@ -235,8 +236,13 @@ class Scheduler(object):
     def _when(self, entry, next_time_to_run, mktime=time.mktime):
         adjust = self.adjust
 
-        return (mktime(entry.schedule.now().timetuple()) +
-                (adjust(next_time_to_run) or 0))
+        now = entry.schedule.now()
+        try:
+            now = now.astimezone(pytz.utc)
+        except:
+            pass
+
+        return (mktime(now.timetuple()) + (adjust(next_time_to_run) or 0))
 
     def populate_heap(self, event_t=event_t, heapify=heapq.heapify):
         """Populate the heap with the data contained in the schedule."""
