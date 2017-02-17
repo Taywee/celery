@@ -309,10 +309,10 @@ def to_utc(dt):
 def maybe_make_aware(dt, tz=None):
     if is_naive(dt):
         dt = to_utc(dt)
-    return localize(
-        dt, timezone.utc if tz is None else timezone.tz_or_local(tz),
-    )
-
+        return localize(
+            dt, timezone.utc if tz is None else timezone.tz_or_local(tz),
+        )
+    return dt
 
 class ffwd(object):
     """Version of relativedelta that only supports addition."""
