@@ -497,7 +497,8 @@ class crontab(schedule):
                                  self._orig_hour,
                                  self._orig_day_of_week,
                                  self._orig_day_of_month,
-                                 self._orig_month_of_year), None)
+                                 self._orig_month_of_year,
+                                 self.nowfun), None)
 
     def remaining_delta(self, last_run_at, tz=None, ffwd=ffwd):
         tz = tz or self.tz
