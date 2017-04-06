@@ -80,8 +80,8 @@ class schedule(object):
 
     def remaining_estimate(self, last_run_at):
         return remaining(
-            self.maybe_make_aware(last_run_at), self.run_every,
-            self.maybe_make_aware(self.now()), self.relative,
+            maybe_make_aware(last_run_at), self.run_every,
+            maybe_make_aware(self.now()), self.relative,
         )
 
     def is_due(self, last_run_at):
@@ -114,17 +114,12 @@ class schedule(object):
             the django-celery database scheduler the value is 5 seconds.
 
         """
-        last_run_at = self.maybe_make_aware(last_run_at)
+        last_run_at = maybe_make_aware(last_run_at)
         rem_delta = self.remaining_estimate(last_run_at)
         remaining_s = timedelta_seconds(rem_delta)
         if remaining_s == 0:
             return schedstate(is_due=True, next=self.seconds)
         return schedstate(is_due=False, next=remaining_s)
-
-    def maybe_make_aware(self, dt):
-        if self.utc_enabled:
-            return maybe_make_aware(dt, self.tz)
-        return dt
 
     def __repr__(self):
         return '<freq: {0.human_seconds}>'.format(self)
@@ -420,7 +415,7 @@ class crontab(schedule):
                     min=min_, max=max_ - 1 + min_, value=number))
         return result
 
-    def _delta_to_next(self, last_run_at, next_hour, next_minute):
+    def _delta_to_next(self, last_run_at, next_hour, next_minute, tz=None):
         """
         Takes a datetime of last run, next minute and hour, and
         returns a relativedelta for the next scheduled day and time.
@@ -446,9 +441,9 @@ class crontab(schedule):
                         day_out_of_range(datedata.year,
                                          months_of_year[datedata.moy],
                                          days_of_month[datedata.dom]) or
-                        (self.maybe_make_aware(datetime(datedata.year,
+                        (maybe_make_aware(datetime(datedata.year,
                          months_of_year[datedata.moy],
-                         days_of_month[datedata.dom])) < last_run_at))
+                         days_of_month[datedata.dom]), tz) < last_run_at))
 
                 if flag:
                     datedata.dom = 0
@@ -502,8 +497,8 @@ class crontab(schedule):
 
     def remaining_delta(self, last_run_at, tz=None, ffwd=ffwd):
         tz = tz or self.tz
-        last_run_at = self.maybe_make_aware(last_run_at)
-        now = self.maybe_make_aware(self.now())
+        last_run_at = maybe_make_aware(last_run_at)
+        now = maybe_make_aware(self.now())
         dow_num = last_run_at.isoweekday() % 7  # Sunday is day 0, not day 7
 
         execute_this_date = (last_run_at.month in self.month_of_year and
@@ -548,7 +543,7 @@ class crontab(schedule):
                                  microsecond=0)
                 else:
                     delta = self._delta_to_next(last_run_at,
-                                                next_hour, next_minute)
+                                                next_hour, next_minute, tz)
         return last_run_at, delta, now
 
     def remaining_estimate(self, last_run_at, ffwd=ffwd):
